@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "nodemon": "^3.1.4"
+  },
+  "name": "df",
+  "version": "1.0.0",
+  "main": "tinh.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon tinh.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
