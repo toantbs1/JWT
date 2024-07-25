@@ -1,48 +1,51 @@
+const { egcd, getRandom, modulus, chooseE} = require("./RSA")
+const {sha256, sha256_10, base64UrlEncode} = require('./sha256_base64')
 
-const crypto = require("crypto");
+//Tạo số nguyên tố p và q ngẫu nhiên
+var p = getRandom()
+var q = getRandom()
+console.log('Số nguyên tố p:', p)
+console.log('Số nguyên tố q:', q)
 
-function base64UrlEncode(jsonString) {
-    
-    // Mã hóa chuỗi này thành Base64
-    const base64String = btoa(jsonString);
-  
-    // Thay thế các ký tự "+", "/" bằng "-", "_" tương ứng
-    const base64UrlString = base64String.replace(/\+/g, '-')
-                                       .replace(/\//g, '_');
-  
-    // Loại bỏ các ký tự "=" cuối chuỗi
-    return base64UrlString.replace(/=+$/, '');
-  }
+//Tính n và phiN
+let n = p*q
+console.log('n:', n)
 
-var json = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2OWY2NTM5MTllNGRlYzEwMzVlZWIyOSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3MjE3ODk3MTcsImV4cCI6MTcyMTc4OTc0N30.j2T1XcDdjEXAZJe1t5GzlM_BIpdCvWZtJOde0JHm6cw'
-var decodeHeader = atob(json.split('.')[0])
-var decodePayload = atob(json.split('.')[1])
+let phiN = (p-BigInt(1))*(q-BigInt(1))
+console.log("phiN:",phiN)
 
-console.log('decodeHeader',decodeHeader)
-console.log('decodePayload',decodePayload)
+//Public key
+let e = chooseE(phiN)
+console.log('Public Key: e:', e, ', n:', n)
 
-var encodeHead = base64UrlEncode(decodeHeader)
-console.log('encodeHead',encodeHead)
-var encodePay = base64UrlEncode(decodePayload)
-console.log('encodePay',encodePay)
+//Private key
+let d = egcd(e, phiN)
+console.log('Private Key: d:', d, ', n:', n)
 
-// Khóa bí mật
-const secretKey = 'access_token'
+// Tạo mã iat và exp
+const iat = Math.floor(Date.now() / 1000);
+const exp = iat + 30; // Hết hạn sau 30s
+
+var Header = {
+    alg:'HS256',
+    typ:'JWT'
+}
+var Payload = {
+    id:'669f653919e4dec1035eeb29',
+    isAdmin:false,
+    iat: iat,
+    exp: exp
+}
+var encodeHead = base64UrlEncode(JSON.stringify(Header))
+var encodePay = base64UrlEncode(JSON.stringify(Payload))
 
 // Tạo chữ ký HMAC SHA-256
-const signature = crypto.createHmac('sha256', secretKey)
-                        .update(`${encodeHead}.${encodePay}`)
-                        .digest('base64')
-                        .replace(/=+$/, '')
-                        .replace(/\+/g, '-')
-                        .replace(/\//g, '_');
+const signature = modulus(sha256_10(`${encodeHead}.${encodePay}`), d, n)
+//Kiểm tra chữ ký 
+const checkSignature = modulus(signature, e, n)
 
-console.log('Chữ ký HMAC SHA-256 (base64 encoded):', signature);
-
-if(signature===json.split('.')[2])
-{
-    console.log(true)
-}
-else{
-    console.log(false)
+if(checkSignature === sha256_10(`${encodeHead}.${encodePay}`)){
+    console.log('Mã JWT:',`${encodeHead}.${encodePay}.${sha256(`${encodeHead}.${encodePay}`)}`)
+} else {
+    console.log("CHữ ký không hợp lệ")
 }
