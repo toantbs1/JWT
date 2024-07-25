@@ -43,8 +43,20 @@ const base64UrlEncode = (jsonString) => {
     // Loại bỏ các ký tự "=" cuối chuỗi
     return base64UrlString.replace(/=+$/, '');
 }
+
+const JWTVerify = (jwt) => {
+    // Thay thế các ký tự "-", "_" bằng "+", "/" tương ứng
+    jwt = jwt.replace(/\-/g, '+')
+                                       .replace(/\_/g, '/');
+
+    // Mã hóa chuỗi này thành Base64
+    jwt = atob(jwt);
+    return jwt
+}
+
 module.exports={
     sha256,
     sha256_10,
-    base64UrlEncode
+    base64UrlEncode,
+    JWTVerify
 }
